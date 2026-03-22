@@ -5,11 +5,11 @@
    1. Movie Api
       `https://api.themoviedb.org/3/search/movie?api_key=de77c6d1779b5eb456c35ad08326563e&query=${MOVIE NAME}`
    2. Music Api
-      
-   3. Quote Api
-     
-   4. Acitivity Api
-     
+      `https://ws.audioscrobbler.com/2.0/';`
+   4. Quote Api
+       `https://zenquotes.io/api/random`
+   5. Acitivity Api
+       `https://opentdb.com/api.php?amount=10`
   
 4. Features
   🎭 1. Mood Selection System
