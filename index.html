@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Mood Based Recommendation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="page1" class="page active">
+        <div class="container">
+            <h1>🎯 What's Your Mood?</h1>
+            <p>Select your current mood to get personalized recommendations</p>
+            
+            <div class="mood-buttons">
+                <button class="mood-btn" onclick="selectMood('happy')">😊 Happy</button>
+                <button class="mood-btn" onclick="selectMood('sad')">😢 Sad</button>
+                <button class="mood-btn" onclick="selectMood('excited')">🤩 Excited</button>
+                <button class="mood-btn" onclick="selectMood('relaxed')">😌 Relaxed</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page2" class="page">
+        <div class="container">
+            <h1>📋 What Would You Like?</h1>
+            <p id="moodDisplay"></p>
+            
+            <div class="option-buttons">
+                <button class="option-btn" onclick="selectOption('movie')">🎬 Movie</button>
+                <button class="option-btn" onclick="selectOption('music')">🎵 Music</button>
+                <button class="option-btn" onclick="selectOption('quote')">💬 Quote</button>
+                <button class="option-btn" onclick="selectOption('activity')">🎯 Activity</button>
+            </div>
+
+            <button class="back-btn" onclick="backToMood()">← Back</button>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div class="container">
+            <h1>✨ Your Recommendation</h1>
+            <p id="selectionInfo"></p>
+            
+            <div class="result-box">
+                <p id="recommendation" class="loading">Loading your recommendation...</p>
+            </div>
+
+            <button class="reset-btn" onclick="resetApp()">Start Over</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
