@@ -1,54 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Mood Based Recommendation</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Get personalized movie, music, quote, and activity recommendations based on your current mood.">
+    <title>MoodVibe — Mood Based Recommendations</title>
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+    <div class="bg-particles" id="bgParticles"></div>
+
     <div id="page1" class="page active">
-        <div class="container">
-            <h1>🎯 What's Your Mood?</h1>
-            <p>Select your current mood to get personalized recommendations</p>
+        <div class="container mood-container">
+            <div class="page-badge">Step 1 of 3</div>
+            <h1 class="hero-title">How are you <span class="gradient-text">feeling</span> today?</h1>
+            <p class="hero-subtitle">Choose your vibe and we'll curate the perfect recommendations for you</p>
             
-            <div class="mood-buttons">
-                <button class="mood-btn" onclick="selectMood('happy')">😊 Happy</button>
-                <button class="mood-btn" onclick="selectMood('sad')">😢 Sad</button>
-                <button class="mood-btn" onclick="selectMood('excited')">🤩 Excited</button>
-                <button class="mood-btn" onclick="selectMood('relaxed')">😌 Relaxed</button>
+            <div class="mood-grid">
+                <button class="mood-card mood-happy" onclick="selectMood('happy')" id="mood-happy">
+                    <div class="mood-emoji">😊</div>
+                    <div class="mood-label">Happy</div>
+                    <div class="mood-desc">Feeling joyful & cheerful</div>
+                    <div class="mood-glow"></div>
+                </button>
+
+                <button class="mood-card mood-sad" onclick="selectMood('sad')" id="mood-sad">
+                    <div class="mood-emoji">😢</div>
+                    <div class="mood-label">Sad</div>
+                    <div class="mood-desc">Need some comfort</div>
+                    <div class="mood-glow"></div>
+                </button>
+
+                <button class="mood-card mood-excited" onclick="selectMood('excited')" id="mood-excited">
+                    <div class="mood-emoji">🤩</div>
+                    <div class="mood-label">Excited</div>
+                    <div class="mood-desc">Full of energy & thrill</div>
+                    <div class="mood-glow"></div>
+                </button>
+
+                <button class="mood-card mood-relaxed" onclick="selectMood('relaxed')" id="mood-relaxed">
+                    <div class="mood-emoji">😌</div>
+                    <div class="mood-label">Relaxed</div>
+                    <div class="mood-desc">Calm & peaceful vibes</div>
+                    <div class="mood-glow"></div>
+                </button>
             </div>
         </div>
     </div>
 
     <div id="page2" class="page">
-        <div class="container">
-            <h1>📋 What Would You Like?</h1>
-            <p id="moodDisplay"></p>
+        <div class="container option-container">
+            <div class="page-badge">Step 2 of 3</div>
+            <h1 class="hero-title">What would you <span class="gradient-text">like</span>?</h1>
+            <p class="hero-subtitle" id="moodDisplay"></p>
             
-            <div class="option-buttons">
-                <button class="option-btn" onclick="selectOption('movie')">🎬 Movie</button>
-                <button class="option-btn" onclick="selectOption('music')">🎵 Music</button>
-                <button class="option-btn" onclick="selectOption('quote')">💬 Quote</button>
-                <button class="option-btn" onclick="selectOption('activity')">🎯 Activity</button>
+            <div class="option-grid">
+                <button class="option-card option-movie" onclick="selectOption('movie')" id="option-movie">
+                    <div class="option-icon-wrap">
+                        <span class="option-icon">🎬</span>
+                    </div>
+                    <div class="option-label">Movies</div>
+                    <div class="option-desc">Discover films that match your mood</div>
+                </button>
+
+                <button class="option-card option-music" onclick="selectOption('music')" id="option-music">
+                    <div class="option-icon-wrap">
+                        <span class="option-icon">🎵</span>
+                    </div>
+                    <div class="option-label">Music</div>
+                    <div class="option-desc">Find the perfect soundtrack</div>
+                </button>
+
+                <button class="option-card option-quote" onclick="selectOption('quote')" id="option-quote">
+                    <div class="option-icon-wrap">
+                        <span class="option-icon">💬</span>
+                    </div>
+                    <div class="option-label">Quotes</div>
+                    <div class="option-desc">Inspiring words to lift you up</div>
+                </button>
+
+                <button class="option-card option-activity" onclick="selectOption('activity')" id="option-activity">
+                    <div class="option-icon-wrap">
+                        <span class="option-icon">🎯</span>
+                    </div>
+                    <div class="option-label">Activities</div>
+                    <div class="option-desc">Fun things to do right now</div>
+                </button>
             </div>
 
-            <button class="back-btn" onclick="backToMood()">← Back</button>
+            <button class="back-btn" onclick="backToMood()" id="back-to-mood">
+                <span class="btn-icon">←</span> Change Mood
+            </button>
         </div>
     </div>
 
     <div id="page3" class="page">
-        <div class="container">
-            <h1>✨ Your Recommendation</h1>
-            <p id="selectionInfo"></p>
+        <div class="container results-container">
+            <div class="page-badge">Step 3 of 3</div>
+            <h1 class="hero-title">Your <span class="gradient-text">Picks</span></h1>
+            <p class="hero-subtitle" id="selectionInfo"></p>
             
-            <div class="result-box">
-                <p id="recommendation" class="loading">Loading your recommendation...</p>
+            <div id="resultsList" class="results-list">
+                <div class="loading-spinner" id="loadingText">
+                    <div class="spinner"></div>
+                    <p>Loading recommendations...</p>
+                </div>
             </div>
 
-            <button class="reset-btn" onclick="resetApp()">Start Over</button>
+            <input type="text" id="searchInput" placeholder="🔍 Search here..." oninput="handleSearch()">
+            
+            <div class="sort-container">
+                <button onclick="toggleSortMenu()">📊 Sort Results</button>
+                <div id="sortMenu" style="display: none;">
+                    <button onclick="sortAZ()">A → Z</button>
+                    <button onclick="sortZA()">Z → A</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="reset-btn" onclick="resetApp()" id="start-over-btn">
+                    <span class="btn-icon">↻</span> Start Over
+                </button>
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
+
+
