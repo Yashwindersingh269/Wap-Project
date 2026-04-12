@@ -1,169 +1,243 @@
-const TMDB_API_KEY = "de77c6d1779b5eb456c35ad08326563e";
-const LASTFM_API_KEY = "c312df4bd59568f4f657216ef67a8abd";
+const API_KEY = '2dca580c2a14b55200e784d157207b4d';
+const BASE_URL = 'https://api.themoviedb.org/3';
+const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
+function toggleTheme() {
+    let body = document.body;
+    let button = document.querySelector(".theme-toggle");
+    
+    if (body.classList.contains("light-theme")) {
+        body.classList.remove("light-theme");
+        button.textContent = "🌙 Dark";
+        localStorage.setItem("theme", "dark");
+    } else {
+        body.classList.add("light-theme");
+        button.textContent = "☀️ Light";
+        localStorage.setItem("theme", "light");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    let savedTheme = localStorage.getItem("theme") || "dark";
+    let button = document.querySelector(".theme-toggle");
+    
+    if (savedTheme === "light") {
+        document.body.classList.add("light-theme");
+        button.textContent = "☀️ Light";
+    }
+});
 
 let selectedMood = null;
 let selectedOption = null;
+let allResults = [];
 
-const moodMap = {
-    happy: "comedy",
-    sad: "drama",
-    excited: "action",
-    relaxed: "romance"
-};
+const moodMap = { happy: "comedy", sad: "drama", excited: "action", relaxed: "romance" };
+const moodEmojis = { happy: "😊", sad: "😢", excited: "🤩", relaxed: "😌" };
 
-const moodEmojis = {
-    happy: "😊",
-    sad: "😢",
-    excited: "🤩",
-    relaxed: "😌"
-};
 
 function showPage(pageNum) {
     document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
     document.getElementById("page" + pageNum).classList.add("active");
 }
 
+
 function selectMood(mood) {
     selectedMood = mood;
-    document.getElementById("moodDisplay").innerText = 
-        `You selected: ${moodEmojis[mood]} ${mood.charAt(0).toUpperCase() + mood.slice(1)}`;
+    let capital = mood.charAt(0).toUpperCase() + mood.slice(1);
+    document.getElementById("moodDisplay").innerText = "You're feeling " + moodEmojis[mood] + " " + capital;
     showPage(2);
 }
 
+
 function selectOption(option) {
     selectedOption = option;
-    const optionEmojis = {
-        movie: "🎬",
-        music: "🎵",
-        quote: "💬",
-        activity: "🎯"
-    };
+    const emojis = { movie: "🎬", music: "🎵", quote: "💬", activity: "🎯" };
     
-    document.getElementById("selectionInfo").innerText = 
-        `${moodEmojis[selectedMood]} ${selectedMood.toUpperCase()} - ${optionEmojis[option]} ${option.toUpperCase()}`;
+    let msg = moodEmojis[selectedMood] + " " + selectedMood.toUpperCase() + 
+              " → " + emojis[option] + " " + option.toUpperCase();
+    document.getElementById("selectionInfo").innerText = msg;
+    
+    document.getElementById("resultsList").innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading...</p></div>';
+    allResults = [];
     
     showPage(3);
-    fetchRecommendation();
+    fetchData();
 }
 
-async function fetchRecommendation() {
-    const keyword = moodMap[selectedMood];
+// FETCH DATA FROM API
+function fetchData() {
+    if (selectedOption === "movie") fetchMovies();
+    else if (selectedOption === "music") fetchMusic();
+    else if (selectedOption === "quote") fetchQuotes();
+    else if (selectedOption === "activity") fetchActivities();
+}
+
+// Fetch Movies
+function fetchMovies() {
+    let keyword = moodMap[selectedMood];
+    fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&page=1`)
+        .then(r => r.json())
+        .then(data => {
+            allResults = data.results?.slice(0, 20).map(movie => {
+                let title = movie.title || "Unknown";
+                let rating = movie.vote_average ? "⭐ " + movie.vote_average.toFixed(1) + "/10" : "";
+                let desc = movie.overview?.substring(0, 150) || "No description";
+                let posterPath = movie.poster_path ? `${IMAGE_BASE_URL}/w500${movie.poster_path}` : "";
+                let link = "https://www.youtube.com/results?search_query=" + encodeURIComponent(title + " trailer");
+                
+                let html = `<div class="result-card">
+                    ${posterPath ? `<img src="${posterPath}" alt="${title}">` : ''}
+                    <div class="result-title">🎬 ${title}</div>
+                    <div class="result-detail">${rating}</div>
+                    <div class="result-description">${desc}</div>
+                    <a href="${link}" target="_blank" class="yt-link">▶ Watch Trailer →</a>
+                </div>`;
+                
+                return { html, searchText: title };
+            }) || [];
+            allResults.sort(() => Math.random() - 0.5);
+            displayResults();
+        })
+        .catch(e => {
+            console.error(e);
+            displayError("Failed to load movies");
+        });
+}
+
+// Fetch Music
+function fetchMusic() {
+    const queries = {
+        happy: "upbeat OR pop OR dance",
+        sad: "sad OR melancholic OR emotional",
+        excited: "rock OR metal OR electronic",
+        relaxed: "ambient OR chill OR lo-fi"
+    };
     
-    switch(selectedOption) {
-        case "movie":
-            await getMovie(keyword);
-            break;
-        case "music":
-            await getMusic(keyword);
-            break;
-        case "quote":
-            await getQuote();
-            break;
-        case "activity":
-            await getActivity();
-            break;
-    }
+    fetch(`https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(queries[selectedMood])}&limit=50&fmt=json`, 
+        { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            allResults = data.recordings?.slice(0, 25).map(track => {
+                let title = track.title || "Unknown";
+                let artist = track['artist-credit']?.[0]?.name || "Unknown Artist";
+                let score = track.score ? "🔥 " + track.score + "%" : "";
+                let link = "https://www.youtube.com/results?search_query=" + encodeURIComponent(title + " " + artist);
+                
+                let html = `<div class="result-card">
+                    <div class="result-title">🎵 ${title}</div>
+                    <div class="result-detail">🎤 ${artist}</div>
+                    <div class="result-detail">${score}</div>
+                    <a href="${link}" target="_blank" class="yt-link">▶ Listen →</a>
+                </div>`;
+                
+                return { html, searchText: title + " " + artist };
+            }) || [];
+            allResults.sort(() => Math.random() - 0.5);
+            displayResults();
+        })
+        .catch(e => displayError("Failed to load music"));
 }
 
-async function getMovie(keyword) {
-    try {
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${keyword}`);
-        
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        let data = await res.json();
-
-        if (data.results && data.results.length > 0) {
-            const movie = data.results[0];
-            document.getElementById("recommendation").innerHTML = 
-                `<strong>${movie.title}</strong><br/><em>${movie.release_date || 'N/A'}</em><br/><p>${movie.overview || 'No description available'}</p>`;
-        } else {
-            document.getElementById("recommendation").innerText = "❌ No movie found for this mood";
-        }
-    } catch (error) {
-        console.error("Movie API Error:", error);
-        document.getElementById("recommendation").innerText = "❌ Failed to load movie. Please try again.";
-    }
+// Fetch Quotes
+function fetchQuotes() {
+    fetch("https://dummyjson.com/quotes?limit=30")
+        .then(r => r.json())
+        .then(data => {
+            allResults = data.quotes?.map(quote => {
+                let html = `<div class="result-card">
+                    <div class="result-title">💬 "${quote.quote}"</div>
+                    <div class="result-detail">— ${quote.author}</div>
+                </div>`;
+                return { html, searchText: quote.quote + " " + quote.author };
+            }) || [];
+            allResults.sort(() => Math.random() - 0.5);
+            displayResults();
+        })
+        .catch(e => displayError("Failed to load quotes"));
 }
 
-async function getMusic(keyword) {
-    try {
-        let res = await fetch(`https://ws.audioscrobbler.com/2.0/?method=track.search&track=${keyword}&api_key=${LASTFM_API_KEY}&format=json`);
-        
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        let data = await res.json();
-
-        if (data.results && data.results.trackmatches && data.results.trackmatches.track && data.results.trackmatches.track.length > 0) {
-            let track = data.results.trackmatches.track[0];
-            document.getElementById("recommendation").innerHTML = 
-                `<strong>${track.name}</strong><br/><em>Artist: ${track.artist}</em><br/><a href="${track.url}" target="_blank">Listen on Last.fm →</a>`;
-        } else {
-            document.getElementById("recommendation").innerText = "❌ No track found for this mood";
-        }
-    } catch (error) {
-        console.error("Music API Error:", error);
-        document.getElementById("recommendation").innerText = "❌ Failed to load music. Please try again.";
-    }
+// Fetch Activities
+function fetchActivities() {
+    fetch("https://opentdb.com/api.php?amount=20")
+        .then(r => r.json())
+        .then(data => {
+            allResults = data.results?.map(q => {
+                let text = q.question
+                    .replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>').replace(/&#039;/g, "'");
+                
+                let html = `<div class="result-card">
+                    <div class="result-title">🎯 ${text}</div>
+                    <div class="result-detail">📁 ${q.category}</div>
+                    <div class="result-detail">⚡ ${q.difficulty.toUpperCase()}</div>
+                </div>`;
+                return { html, searchText: text + " " + q.category };
+            }) || [];
+            allResults.sort(() => Math.random() - 0.5);
+            displayResults();
+        })
+        .catch(e => displayError("Failed to load activities"));
 }
 
-async function getQuote() {
-    try {
-        let res = await fetch("https://zenquotes.io/api/random");
-        
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        let data = await res.json();
-
-        if (data && data.length > 0) {
-            document.getElementById("recommendation").innerHTML = 
-                `<strong>"${data[0].q}"</strong><br/><em>— ${data[0].a}</em>`;
-        } else {
-            document.getElementById("recommendation").innerText = "❌ No quote found";
-        }
-    } catch (error) {
-        console.error("Quote API Error:", error);
-        document.getElementById("recommendation").innerText = "❌ Failed to load quote. Please try again.";
+// Display Results
+function displayResults() {
+    if (allResults.length === 0) {
+        displayError("No results found");
+        return;
     }
+    let html = allResults.map(r => r.html).join("");
+    document.getElementById("resultsList").innerHTML = html;
 }
 
-async function getActivity() {
-    try {
-        let res = await fetch("https://opentdb.com/api.php?amount=1");
-        
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        let data = await res.json();
-
-        if (data.results && data.results.length > 0) {
-            const question = data.results[0].question
-                .replace(/&quot;/g, '"')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
-            const difficulty = data.results[0].difficulty.toUpperCase();
-            
-            document.getElementById("recommendation").innerHTML = 
-                `<strong>${question}</strong><br/><em>Difficulty: ${difficulty}</em>`;
-        } else {
-            document.getElementById("recommendation").innerText = "❌ No question found";
-        }
-    } catch (error) {
-        console.error("Activity API Error:", error);
-        document.getElementById("recommendation").innerText = "❌ Failed to load question. Please try again.";
-    }
+// Display Error
+function displayError(msg) {
+    document.getElementById("resultsList").innerHTML = `<p class="no-results">❌ ${msg}</p>`;
 }
 
+//  BACK & RESET 
 function backToMood() {
     selectedOption = null;
-    showPage(1);
+    showPage(2);
 }
 
 function resetApp() {
     selectedMood = null;
     selectedOption = null;
-    showPage(1);
+    allResults = [];
     document.getElementById("moodDisplay").innerText = "";
     document.getElementById("selectionInfo").innerText = "";
-    document.getElementById("recommendation").innerHTML = 'Loading your recommendation...';
+    document.getElementById("searchInput").value = "";
+    showPage(1);
+}
+
+// SEARCH 
+function handleSearch() {
+    let query = document.getElementById("searchInput").value.toLowerCase();
+    
+    if (query === "") {
+        let html = allResults.map(r => r.html).join("");
+        document.getElementById("resultsList").innerHTML = html;
+        return;
+    }
+
+    let filtered = allResults.filter(r => r.searchText.toLowerCase().includes(query));
+    let html = filtered.length === 0 ? '<p class="no-results">❌ No results found</p>' : filtered.map(r => r.html).join("");
+    document.getElementById("resultsList").innerHTML = html;
+}
+
+// SORT 
+function sortAZ() {
+    allResults.sort((a, b) => a.searchText.localeCompare(b.searchText));
+    document.getElementById("resultsList").innerHTML = allResults.map(r => r.html).join("");
+    document.getElementById("searchInput").value = "";
+}
+
+function sortZA() {
+    allResults.sort((a, b) => b.searchText.localeCompare(a.searchText));
+    document.getElementById("resultsList").innerHTML = allResults.map(r => r.html).join("");
+    document.getElementById("searchInput").value = "";
+}
+
+function toggleSortMenu() {
+    let menu = document.getElementById("sortMenu");
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
 }
