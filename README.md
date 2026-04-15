@@ -3,7 +3,7 @@
   My Wap project suggests movies, music, quotes, and activities based on user mood.
 2. Api's Used
    1. Movie Api
-      `https://api.themoviedb.org/3/search/movie?api_key=de77c6d1779b5eb456c35ad08326563e&query=${MOVIE NAME}`
+      `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&page=1`
    2. Music Api
       `https://ws.audioscrobbler.com/2.0/';`
    4. Quote Api
